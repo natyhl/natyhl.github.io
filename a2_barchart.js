@@ -25,7 +25,7 @@ function draw() {
   // Draw axes
   stroke(0);
   strokeWeight(1); 
-  line(chartLeft, chartBottom, chartRight, chartBottom);; // x-axis
+  line(chartLeft, chartBottom, chartRight + 10, chartBottom);; // x-axis
   line(chartLeft, chartTop, chartLeft, chartBottom); // y-axis
 
   // Find max
@@ -54,14 +54,21 @@ function draw() {
   // Draw bars
   // Loop through each row in table
   for (var i = 0; i < numberOfRows; i++) {
-    //draw graph
+    //draw one bar
     let barH = map(visits[i], 0, maxVal, 0, chartBottom - chartTop); // maps pixels
-    rect(i * 30 + 60, chartBottom - barH, 20, barH);
+    rect(i * 30 + 70, chartBottom - barH, 20, barH);
+
+    // uniformly placed marks
+    if (i % 5 === 0) { 
+      stroke(0);
+      line(i * 30 + chartLeft + 10, chartBottom, i * 30 + chartLeft + 10, chartBottom + 10);
+      noStroke();
+    }
 
     // x-labels
     fill(0);
     textAlign(CENTER);
-    text(table.getString(i, 0), i * 30 + chartLeft, chartBottom + 20); // get from column
+    text(table.getString(i, 0), i * 30 + chartLeft + 10, chartBottom + 20); // get from column
     fill(100, 200, 200);
   }
 
