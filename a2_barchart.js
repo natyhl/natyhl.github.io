@@ -4,7 +4,7 @@ let values = [];
 let chartTop = 50;
 let chartBottom = 400;
 let chartLeft = 60;
-let chartRight = 750;
+let chartRight = 1430
 let chartWidth = 20;
 
 function preload(){
@@ -12,7 +12,7 @@ function preload(){
 }
 
 function setup() {
-  createCanvas(800, 500);
+  createCanvas(1450, 500);
   numberOfRows = table.getRowCount();
   numberOfColumns = table.getColumnCount();
   noLoop(); // setup only once
@@ -69,7 +69,7 @@ function draw() {
   fill(0);
   textAlign(CENTER, CENTER);
   textSize(15);
-  text("US National Park Recreation Visits", 400, 30); // Fixed: centered at 400
+  text("US National Park Recreation Visits", 725, 30); // Fixed: centered at 400
 
   // name axes
   textSize(12); // Added: smaller size for axis labels
@@ -77,19 +77,12 @@ function draw() {
   textAlign(CENTER);
   text("Year", (chartLeft + chartRight) / 2, chartBottom + 40);
 
-  translate(20, (chartTop + chartBottom) / 2);
+  translate(15, (chartTop + chartBottom) / 2); // https://p5js.org/reference/p5/translate/
   rotate(-PI / 2); // https://p5js.org/reference/p5/rotate/
   text("Recreation Visits", 0, 0);
 
   rotate(PI / 2);
-  translate(-20, -(chartTop + chartBottom) / 2); // reset
-  
-  // push(); // Fixed: use push/pop instead of manual reset
-  // translate(20, (chartTop + chartBottom) / 2);
-  // rotate(-PI / 2); // https://p5js.org/reference/p5/rotate/
-  // text("Recreation Visits", 0, 0);
-  // pop(); // Fixed: auto-reset
-
+  translate(-15, -(chartTop + chartBottom) / 2); // reset
 }
 
 /*source: lecture + https://editor.p5js.org/jsarachan/sketches/ry8TEc_0b*/
