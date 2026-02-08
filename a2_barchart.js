@@ -1,6 +1,7 @@
 let table
-let values = [];
+let visits = []; // Store from csv
 
+// Chart boundaries
 let chartTop = 50;
 let chartBottom = 400;
 let chartLeft = 60;
@@ -21,7 +22,7 @@ function setup() {
 function draw() {
   background(220); 
 
-  // Axes
+  // Draw axes
   stroke(0);
   strokeWeight(1); 
   line(chartLeft, chartBottom, chartRight, chartBottom);; // x-axis
@@ -31,20 +32,20 @@ function draw() {
   let maxVal = 0;                                         
   for (let i = 0; i < numberOfRows; i++) {                
     let v = table.getNum(i, 1);                            
-    values[i] = v;                                         
+    visits[i] = v;                                         
     if (v > maxVal) maxVal = v;                            
   }
 
-  // label y-axes
+  // Label y-axes
   fill(0);
   textAlign(RIGHT, CENTER); 
   for (let k = 0; k <= 5; k++) {
     let val = (maxVal / 5) * k;
-    let y = map(val, 0, maxVal, chartBottom, chartTop); // https://p5js.org/reference/p5/map/
+    let y = map(val, 0, maxVal, chartBottom, chartTop); // https://p5js.org/reference/p5/map/, map() scales val from data range to screen range
     stroke(0); 
     line(chartLeft - 5, y, chartLeft, y);
     noStroke();
-    text(nf(val / 1000000, 0, 1) + "M", chartLeft - 10, y); //label based on csv
+    text(nf(val / 1000000, 0, 1) + "M", chartLeft - 10, y); //label based on csv, nf() converts a Number into a String
   }
 
   fill(100, 200, 200); // light turquise
@@ -54,13 +55,13 @@ function draw() {
   // Loop through each row in table
   for (var i = 0; i < numberOfRows; i++) {
     //draw graph
-    let barH = map(values[i], 0, maxVal, 0, chartBottom - chartTop);
+    let barH = map(visits[i], 0, maxVal, 0, chartBottom - chartTop); // maps pixels
     rect(i * 30 + 60, chartBottom - barH, 20, barH);
 
     // x-labels
     fill(0);
     textAlign(CENTER);
-    text(table.getString(i, 0), i * 30 + chartLeft, chartBottom + 20);
+    text(table.getString(i, 0), i * 30 + chartLeft, chartBottom + 20); // get from column
     fill(100, 200, 200);
   }
 
