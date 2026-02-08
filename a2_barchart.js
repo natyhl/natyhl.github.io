@@ -37,14 +37,19 @@ function draw() {
 
   // label y-axes
   fill(0);
+  noStroke(); // Added: turn off stroke for text
+  textAlign(RIGHT, CENTER); // Added: align y-axis labels
   for (let k = 0; k <= 5; k++) {
     let val = (maxVal / 5) * k;
     let y = map(val, 0, maxVal, chartBottom, chartTop); // https://p5js.org/reference/p5/map/
+    stroke(0); // Added: turn on for tick marks
     line(chartLeft - 5, y, chartLeft, y);
+    noStroke(); // Added: turn off for text
     text(nf(val / 1000000, 0, 1) + "M", chartLeft - 10, y); //** label based on csv
   }
 
   fill(100, 200, 200); // light turquise
+  noStroke(); // Added: no stroke for bars
 
   // Draw bars
   // Loop through each row in table
@@ -55,6 +60,7 @@ function draw() {
 
     // x-labels
     fill(0);
+    textAlign(CENTER); // Added: center x-labels
     text(table.getString(i, 0), i * 30 + chartLeft, chartBottom + 20);
     fill(100, 200, 200);
   }
@@ -63,18 +69,26 @@ function draw() {
   fill(0);
   textAlign(CENTER, CENTER);
   textSize(15);
-  text("Bar Chart", 200, 50);
+  text("US National Park Recreation Visits", 400, 30); // Fixed: centered at 400
 
   // name axes
+  textSize(12); // Added: smaller size for axis labels
   fill(0);
   textAlign(CENTER);
   text("Year", (chartLeft + chartRight) / 2, chartBottom + 40);
+
   translate(20, (chartTop + chartBottom) / 2);
   rotate(-PI / 2); // https://p5js.org/reference/p5/rotate/
   text("Recreation Visits", 0, 0);
 
   rotate(PI / 2);
   translate(-20, -(chartTop + chartBottom) / 2); // reset
+  
+  // push(); // Fixed: use push/pop instead of manual reset
+  // translate(20, (chartTop + chartBottom) / 2);
+  // rotate(-PI / 2); // https://p5js.org/reference/p5/rotate/
+  // text("Recreation Visits", 0, 0);
+  // pop(); // Fixed: auto-reset
 
 }
 
