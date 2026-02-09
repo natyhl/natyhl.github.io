@@ -104,5 +104,3 @@ function draw() {
 
 
 }
-
-/*source: lecture + https://editor.p5js.org/jsarachan/sketches/ry8TEc_0b*/
