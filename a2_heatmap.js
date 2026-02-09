@@ -66,7 +66,7 @@ function draw() {
   fill(0);
   textSize(15);
   textAlign(CENTER);
-  text("US National Park Recreation Visits - Heatmap", 500, 30);
+  text("US National Park Recreation Visits", 500, 30);
   
   // name axes
   text("Years", chartLeft + 150, chartTop + grid.length * squareHeight + 20);

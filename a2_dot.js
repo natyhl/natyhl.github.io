@@ -91,7 +91,7 @@ function draw() {
   fill(0);
   textAlign(CENTER, CENTER);
   textSize(15);
-  text("US National Park Recreation Visits - Dot Plot", 725, 30);
+  text("US National Park Recreation Visits", 725, 30);
 
   // name axes
   textSize(12);
