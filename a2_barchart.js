@@ -29,11 +29,15 @@ function draw() {
   line(chartLeft, chartTop, chartLeft, chartBottom); // y-axis
 
   // Find max
-  let maxVal = 0;                                         
+  let maxVal = 0;
+  let maxIdx = 0;                                         
   for (let i = 0; i < numberOfRows; i++) {                
     let v = table.getNum(i, 1);                            
     visits[i] = v;                                         
-    if (v > maxVal) maxVal = v;                            
+    if (v > maxVal) {
+      maxVal = v; 
+      maxIdx = i;
+    }                           
   }
 
   // Label y-axes
@@ -90,6 +94,16 @@ function draw() {
 
   rotate(PI / 2);
   translate(-15, -(chartTop + chartBottom) / 2); // reset
+
+  // Extra credit: Highest value
+  let maxX = maxIdx * 30 + chartLeft + 10;
+  let maxY = chartBottom - map(maxVal, 0, maxVal, 0, chartBottom - chartTop);
+  stroke(255, 0, 0);
+  line(maxX - 30, maxY, maxX + 30, maxY);
+  fill(255, 0, 0);
+  noStroke();
+  textAlign(CENTER);
+  text("Highest value", maxX, maxY - 10);
 }
 
 /*source: lecture + https://editor.p5js.org/jsarachan/sketches/ry8TEc_0b*/

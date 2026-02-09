@@ -71,11 +71,12 @@ function draw() {
   // name axes
   text("Years", chartLeft + 150, chartTop + grid.length * squareHeight + 20);
   
-  push();
-  translate(30, chartTop + 100);
+  translate(20, chartTop + 100);
   rotate(-PI / 2);
   text("Time Period", 0, 0);
-  pop();
+  translate(-20, -(chartTop + chartBottom) / 2); // reset
+
+
 }
 
 /*source: lecture + https://editor.p5js.org/greggelong/sketches/tZ6MvMLUa*/
