@@ -8,7 +8,6 @@ let chartTop = 50;
 let chartBottom = 400;
 let chartLeft = 60;
 let chartRight = 1430
-let chartWidth = 20;
 
 function preload(){
   table = loadTable('us-parks_a3.csv', 'csv', 'header')
@@ -43,55 +42,76 @@ function draw() {
     }                      
   }
 
+  // Histogram bins
   let numBins = 10;
   let bSize = (maxVal - minVal) / numBins;
-  let bins = [];
-
-  for (let i = 0; i < numBins; i++) {
+  let bins = []; // bin counts
+  for (let i = 0; i < numBins; i++) { // initialize
     bins[i] = 0;
   }
 
   for (let i = 0; i < visits.length; i++) {
-    let bIndex = int((visits[i] - minVal) / bSize);
+    let bIndex = int((visits[i] - minVal) / bSize); // which bin?
+
+    // out of bounds
     if (bIndex >= numBins) {
       bIndex = numBins - 1;
     }
     bins[bIndex]++;
   }
 
-  let maxCount = 0;
+  // find bin with highest value
+  let maxFreq = 0;
   for (let i = 0; i < numBins; i++) {
-    if (bins[i] > maxCount) maxCount = bins[i];
+    if (bins[i] > maxFreq) maxFreq = bins[i];
   }
 
   // Label y-axes
   fill(0);
-  textAlign(RIGHT, CENTER); 
+  textAlign(RIGHT, CENTER);
+
   for (let k = 0; k <= 5; k++) {
-    let val = (maxCount / 5) * k;
-    let y = map(val, 0, maxCount, chartBottom, chartTop); // https://p5js.org/reference/p5/map/, map() scales val from data range to screen range
+    // adjust to percentage ratio
+    let val = (maxFreq / 5) * k;
+    let y = map(val, 0, maxFreq, chartBottom, chartTop); // https://p5js.org/reference/p5/map/
+
     stroke(0); 
     line(chartLeft - 5, y, chartLeft, y);
     noStroke();
-    text(int(val), chartLeft - 10, y); //label based on csv
+    text(int(val), chartLeft - 10, y); // count number of each percentage
   }
 
   fill(100, 200, 200); // light turquise
   noStroke();
 
-  // Draw bars
-  // Loop through each row in table
+
   let barWidth = (chartRight - chartLeft) / numBins;
+
+  // grid
+  stroke(200);
+  strokeWeight(0.5);
+  for (let k = 0; k <= 5; k++) {
+    let v = (maxFreq / 5) * k;
+    // y-coordinate
+    let y = map(v, 0, maxFreq, chartBottom, chartTop);
+    line(chartLeft, y, chartRight, y);
+  }
+
+  for (let i = 0; i <= numBins; i++) {
+    // x-coordinate
+    let x = chartLeft + i * barWidth;
+    line(x, chartTop, x, chartBottom);
+  }
+
+  // Draw bars
   for (let i = 0; i < numBins; i++) {
-    let barH = map(bins[i], 0, maxCount, 0, chartBottom - chartTop);
+    let barH = map(bins[i], 0, maxFreq, 0, chartBottom - chartTop);
     rect(chartLeft + i * barWidth, chartBottom - barH, barWidth - 2, barH);
 
-    // uniformly placed marks
-    if (i % 5 === 0) { 
-      stroke(0);
-      line(i * 30 + chartLeft + 10, chartBottom, i * 30 + chartLeft + 10, chartBottom + 10);
-      noStroke();
-    }
+    /// uniformly placed marks
+    stroke(0);
+    line(chartLeft + i * barWidth, chartBottom, chartLeft + i * barWidth, chartBottom + 10);
+    noStroke();
 
     // x-labels
     fill(0);
@@ -115,7 +135,7 @@ function draw() {
 
   translate(15, (chartTop + chartBottom) / 2); // https://p5js.org/reference/p5/translate/
   rotate(-PI / 2); // https://p5js.org/reference/p5/rotate/
-  text("Frequency of Visits", 0, 0);
+  text("Frequency", 0, 0);
 
   rotate(PI / 2);
   translate(-15, -(chartTop + chartBottom) / 2); // reset
