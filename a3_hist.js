@@ -1,7 +1,7 @@
 // Starter code - a2_barchart.js
 
 let table
-let visits = []; // Store from csv
+let hours = []; // Store from csv
 
 // Chart boundaries
 let chartTop = 50;
@@ -10,7 +10,7 @@ let chartLeft = 60;
 let chartRight = 1430
 
 function preload(){
-  table = loadTable('us-parks_a3.csv', 'csv', 'header')
+  table = loadTable('Smartphone.csv', 'csv', 'header')
 }
 
 function setup() {
@@ -32,8 +32,8 @@ function draw() {
   let maxVal = 0;
   let minVal = 100000000;                                       
   for (let i = 0; i < numberOfRows; i++) {                
-    let v = table.getNum(i, 4);                            
-    visits[i] = v;                                         
+    let v = table.getNum(i, 5);                            
+    hours[i] = v;                                         
     if (v > maxVal) {
       maxVal = v; 
     }
@@ -50,8 +50,8 @@ function draw() {
     bins[i] = 0;
   }
 
-  for (let i = 0; i < visits.length; i++) {
-    let bIndex = int((visits[i] - minVal) / bSize); // which bin?
+  for (let i = 0; i < hours.length; i++) {
+    let bIndex = int((hours[i] - minVal) / bSize); // which bin?
 
     // out of bounds
     if (bIndex >= numBins) {
@@ -117,7 +117,7 @@ function draw() {
     fill(0);
     textAlign(CENTER);
     let binStart = minVal + i * bSize;
-    text(nf(binStart / 1000000, 0, 1) + "M", chartLeft + i * barWidth + barWidth/2, chartBottom + 20); // nf() Converts a Number into a String, https://p5js.org/reference/p5/nf/
+    text(int(binStart), chartLeft + i * barWidth, chartBottom + 20);
     fill(100, 200, 200);
   }
 
@@ -125,13 +125,13 @@ function draw() {
   fill(0);
   textAlign(CENTER, CENTER);
   textSize(15);
-  text("US National Park Recreation Visits", 725, 30);
+  text("Daily Phone Usage Hours - Histogram", 725, 30);
 
   // name axes
   textSize(12);
   fill(0);
   textAlign(CENTER);
-  text("Recreation Visits", (chartLeft + chartRight) / 2, chartBottom + 40);
+  text("Daily Phone Hours", (chartLeft + chartRight) / 2, chartBottom + 40);
 
   translate(15, (chartTop + chartBottom) / 2); // https://p5js.org/reference/p5/translate/
   rotate(-PI / 2); // https://p5js.org/reference/p5/rotate/
