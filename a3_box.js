@@ -1,5 +1,5 @@
 let table
-let visits = []; // Store from csv
+let scores = []; // Store from csv
 
 // Chart boundaries
 let chartTop = 50;
@@ -9,7 +9,7 @@ let chartRight = 400
 let chartWidth = 40;
 
 function preload(){
-  table = loadTable('us-parks_a3.csv', 'csv', 'header')
+  table = loadTable('Smartphone.csv', 'csv', 'header')
 }
 
 function setup() {
@@ -27,29 +27,29 @@ function draw() {
   strokeWeight(1); 
   line(chartLeft, chartTop, chartLeft, chartBottom); // y-axis
 
-  // Load visits
+  // Load scores
   for (let i = 0; i < numberOfRows; i++) {                
-    let v = table.getNum(i, 4);                         
-    visits[i] = v;
+    let v = table.getNum(i, 7);                         
+    scores[i] = v;
   }
 
-  visits = sort(visits); // https://p5js.org/reference/p5/sort/
+  scores = sort(scores); // https://p5js.org/reference/p5/sort/
 
   // Get Median
   let median;
-  if (visits.length % 2 == 0) {
-    median = (visits[visits.length / 2 - 1] + visits[visits.length / 2]) / 2;
+  if (scores.length % 2 == 0) {
+    median = (scores[scores.length / 2 - 1] + scores[scores.length / 2]) / 2;
   } else {
-    median = visits[int(visits.length / 2)];
+    median = scores[int(scores.length / 2)];
   }
 
-  let l = visits.length;
+  let l = scores.length;
   let Q1;
   let half = int(l / 2);
   if (half % 2 == 0) {
-    Q1 = (visits[half / 2 - 1] + visits[half / 2]) / 2;
+    Q1 = (scores[half / 2 - 1] + scores[half / 2]) / 2;
   } else {
-    Q1 = visits[int(half / 2)];
+    Q1 = scores[int(half / 2)];
   }
 
   let Q3;
@@ -60,9 +60,9 @@ function draw() {
 
   let upperLen = l - upperS;
    if (upperLen % 2 == 0) {
-     Q3 = (visits[upperS + upperLen / 2 - 1] + visits[upperS + upperLen / 2]) / 2;
+     Q3 = (scores[upperS + upperLen / 2 - 1] + scores[upperS + upperLen / 2]) / 2;
    } else {
-     Q3 = visits[upperS + int(upperLen / 2)];
+     Q3 = scores[upperS + int(upperLen / 2)];
    }
 
   let iqr = Q3 - Q1;
@@ -70,22 +70,22 @@ function draw() {
   let upperLim = Q3 + 1.5 * iqr;
 
   // Min and max
-  let min = visits[0];
-  let max = visits[l - 1];
+  let min = scores[0];
+  let max = scores[l - 1];
   for (let i = 0; i < l; i++) {
-    if (visits[i] >= lowerLim) {
-      min = visits[i];
+    if (scores[i] >= lowerLim) {
+      min = scores[i];
       break;
     }
   }
   for (let i = l - 1; i >= 0; i--) {
-    if (visits[i] <= upperLim) {
-      max = visits[i];
+    if (scores[i] <= upperLim) {
+      max = scores[i];
       break;
     }
   }
 
-  let maxScale = visits[l - 1];
+  let maxScale = scores[l - 1];
 
   // Label y-axes
   fill(0);
@@ -97,7 +97,7 @@ function draw() {
     stroke(0); 
     line(chartLeft - 5, y, chartLeft, y);
     noStroke();
-    text(nf(val / 1000000, 0, 1) + "M", chartLeft - 10, y); //label based on csv, nf() converts a Number into a String
+    text(nf(val, 0, 1), chartLeft - 10, y); //label based on csv, nf() converts a Number into a String
   }
 
   let minY = map(min, 0, maxScale, chartBottom, chartTop);
@@ -129,17 +129,17 @@ function draw() {
   noStroke();
   textAlign(LEFT, CENTER);
   textSize(10);
-  text("Max: " + nf(max / 1000000, 0, 1) + "M", chartRight + 10, maxY);
-  text("Q3: " + nf(Q3 / 1000000, 0, 1) + "M", chartRight + 10, Q3Y);
-  text("Median: " + nf(median / 1000000, 0, 1) + "M", chartRight + 10, medianY);
-  text("Q1: " + nf(Q1 / 1000000, 0, 1) + "M", chartRight + 10, Q1Y);
-  text("Min: " + nf(min / 1000000, 0, 1) + "M", chartRight + 10, minY);
+  text("Max: " + nf(max, 0, 1), chartRight + 10, maxY); 
+  text("Q3: " + nf(Q3, 0, 1), chartRight + 10, Q3Y); 
+  text("Median: " + nf(median, 0, 1), chartRight + 10, medianY); 
+  text("Q1: " + nf(Q1, 0, 1), chartRight + 10, Q1Y); 
+  text("Min: " + nf(min, 0, 1), chartRight + 10, minY); 
 
   // title
   fill(0);
   textAlign(CENTER, CENTER);
   textSize(15);
-  text("US National Park Recreation Visits", 300, 30);
+  text("Work Productivity Score - Box Plot", 300, 30);
 
   // name axes
   textSize(12);
@@ -148,7 +148,7 @@ function draw() {
 
   translate(15, (chartTop + chartBottom) / 2); // https://p5js.org/reference/p5/translate/
   rotate(-PI / 2); // https://p5js.org/reference/p5/rotate/
-  text("Recreation Visits", 0, 0);
+  text("Productivity Score", 0, 0);
 
   rotate(PI / 2);
   translate(-15, -(chartTop + chartBottom) / 2); // reset
