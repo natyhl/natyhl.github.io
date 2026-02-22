@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,6 +106,25 @@
                 .attr("y", 30) 
                 .attr("text-anchor", "middle") 
                 .text("Yosemite National Park Recreation Visits - Bar Chart");
+
+            // X-axis label
+            //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
+            svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "middle")
+                .attr("x", svgWidth / 2)
+                .attr("y", svgHeight - 20)
+                .text("Year");
+
+            // Y-axis label
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("x", -svgHeight / 2)
+                .attr("y", 15)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text("Recreation Visits");
         });
     </script>
 </body>
