@@ -36,10 +36,22 @@
         .bar-label {
             font-size: 10px;
         }
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
     </style>
 </head>
 <body>
     <div id="chart-container"></div>
+    <div class="tooltip" id="tooltip"></div>
 
     <script>
         // Aiming for grade A
@@ -60,6 +72,8 @@
 
         const chart = svg.append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const tooltip = d3.select("#tooltip");
 
         d3.csv("us-parks.csv").then(function(data) {
 
@@ -102,17 +116,21 @@
                 .attr("x", d => scaleX(d.Year))
                 .attr("y", d => scaleY(d.RecreationVisits))
                 .attr("width", scaleX.bandwidth())
-                .attr("height", d => height - scaleY(d.RecreationVisits));
+                .attr("height", d => height - scaleY(d.RecreationVisits))
 
-            chart.selectAll(".bar-label")
-                .data(data)
-                .enter()
-                .append("text")
-                .attr("class", "bar-label")
-                .attr("x", d => scaleX(d.Year) + scaleX.bandwidth() / 2)
-                .attr("y", d => scaleY(d.RecreationVisits) - 5)
-                .attr("text-anchor", "middle")
-                .text(d => d3.format(".2s")(d.RecreationVisits));            
+                .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`<strong>Year:</strong> ${d.Year} <strong>Visits:</strong> ${d3.format(".2s")(d.RecreationVisits)}`)
+                    .style("opacity", 1);
+            })
+            .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                tooltip.style("opacity", 0);
+            });            
 
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
