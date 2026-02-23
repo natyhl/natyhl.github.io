@@ -43,13 +43,25 @@
             font-size: 18px;
             font-weight: bold;
         }
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
     </style>
 </head>
 <body>
     <div id="chart-container"></div>
+    <div id="tooltip" class="tooltip"></div>
 
     <script>
-        // Aiming for grade A
+        // Aiming for grade A + both extra credits
         // Starter code: in class - Bar Chart
         // Source: https://observablehq.com/@d3/box-plot/2 and https://learning.oreilly.com/library/view/d3-js-in-action/9781633439177/OEBPS/Text/chapter-6.html#p116
 
@@ -69,6 +81,8 @@
 
         const chart = svg.append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const tooltip = d3.select("#tooltip");
 
         d3.csv("us-parks.csv").then(function(data) {
 
@@ -114,7 +128,20 @@
                  .attr("x1", bCenter - bWidth / 2)
                  .attr("x2", bCenter + bWidth / 2)
                  .attr("y1", scaleY(q2))
-                 .attr("y2", scaleY(q2));
+                 .attr("y2", scaleY(q2))
+                 .on("mouseover", (event, d) => {
+                    tooltip
+                        .html(`<strong>${q2}</strong>`)
+                        .style("opacity", 1);
+                    })
+                     .on("mousemove", (event) => {
+                    tooltip
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top",  (event.pageY - 28) + "px");
+                })
+                .on("mouseleave", () => {
+                    tooltip.style("opacity", 0);
+                });
 
             // Whiskers
             chart.append("line")
@@ -122,28 +149,54 @@
                 .attr("x1", bCenter)
                 .attr("x2", bCenter)
                 .attr("y1", scaleY(q1))
-                .attr("y2", scaleY(r0));
+                .attr("y2", scaleY(r0))
 
             chart.append("line")
                 .attr("class", "whisker")
                 .attr("x1", bCenter - bWidth / 2)
                 .attr("x2", bCenter + bWidth / 2)
                 .attr("y1", scaleY(r0))
-                .attr("y2", scaleY(r0));
+                .attr("y2", scaleY(r0))
+                .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`<strong>${r0}</strong>`)
+                    .style("opacity", 1);
+            })
+                 .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                tooltip.style("opacity", 0);
+            });
 
             chart.append("line")
                 .attr("class", "whisker")
                 .attr("x1", bCenter)
                 .attr("x2", bCenter)
                 .attr("y1", scaleY(q3))
-                .attr("y2", scaleY(r1));
+                .attr("y2", scaleY(r1))
 
             chart.append("line")
                 .attr("class", "whisker")
                 .attr("x1", bCenter - bWidth / 2)
                 .attr("x2", bCenter + bWidth / 2)
                 .attr("y1", scaleY(r1))
-                .attr("y2", scaleY(r1));
+                .attr("y2", scaleY(r1))
+                .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`<strong>${r1}</strong>`)
+                    .style("opacity", 1);
+            })
+                 .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                tooltip.style("opacity", 0);
+            });
 
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
