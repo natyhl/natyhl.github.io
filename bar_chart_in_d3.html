@@ -54,7 +54,7 @@
     <div class="tooltip" id="tooltip"></div>
 
     <script>
-        // Aiming for grade A
+        // Aiming for grade A, and both extra credits
         // Starter code: in class - Bar Chart
         // Set up the SVG container
         const svgWidth = 1200;
@@ -88,8 +88,8 @@
                 .range([0, width])
                 .padding(0.1);
 
-            const scaleY = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.RecreationVisits)])
+            const scaleY = d3.scaleLog() //Source: https://d3js.org/d3-scale/log
+                .domain([1, d3.max(data, d => d.RecreationVisits)])
                 .nice()
                 .range([height, 0]);
 
@@ -156,7 +156,7 @@
                 .attr("y", 8)
                 .attr("dy", ".75em")
                 .attr("transform", "rotate(-90)")
-                .text("Recreation Visits");
+                .text("Recreation Visits (Log scale)");
         });
     </script>
 </body>
