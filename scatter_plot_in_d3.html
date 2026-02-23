@@ -111,7 +111,7 @@
                 .attr("r", 5)
                 .on("mouseover", (event, d) => {
                 tooltip
-                    .html(`<strong>${d.label}</strong>: ${d.value}`)
+                    .html(`<strong>Phone:</strong>${d.Daily_Phone_Hours} <strong>Sleep:</strong> ${d.Sleep_Hours}`)
                     .style("opacity", 1);
             })
             .on("mousemove", (event) => {
