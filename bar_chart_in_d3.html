@@ -33,13 +33,17 @@
             font-size: 18px;
             font-weight: bold;
         }
+        .bar-label {
+            font-size: 10px;
+        }
     </style>
 </head>
 <body>
     <div id="chart-container"></div>
 
     <script>
-
+        // Aiming for grade A
+        // Starter code: in class - Bar Chart
         // Set up the SVG container
         const svgWidth = 1200;
         const svgHeight = 600;
@@ -100,6 +104,16 @@
                 .attr("width", scaleX.bandwidth())
                 .attr("height", d => height - scaleY(d.RecreationVisits));
 
+            chart.selectAll(".bar-label")
+                .data(data)
+                .enter()
+                .append("text")
+                .attr("class", "bar-label")
+                .attr("x", d => scaleX(d.Year) + scaleX.bandwidth() / 2)
+                .attr("y", d => scaleY(d.RecreationVisits) - 5)
+                .attr("text-anchor", "middle")
+                .text(d => d3.format(".2s")(d.RecreationVisits));            
+
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
                 .attr("x", svgWidth / 2)
@@ -121,7 +135,7 @@
                 .attr("class", "y label")
                 .attr("text-anchor", "middle")
                 .attr("x", -svgHeight / 2)
-                .attr("y", 15)
+                .attr("y", 8)
                 .attr("dy", ".75em")
                 .attr("transform", "rotate(-90)")
                 .text("Recreation Visits");

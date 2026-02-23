@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart in D3</title>
+    <title>Scatter Plot in D3</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         /* CSS styles for the chart */
@@ -32,13 +32,26 @@
             font-size: 18px;
             font-weight: bold;
         }
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
     </style>
 </head>
 <body>
     <div id="chart-container"></div>
+    <div class="tooltip" id="tooltip"></div>
 
     <script>
-
+        // Aiming for grade A
+        // Starter code: in class - Bar Chart
         // Set up the SVG container
         const svgWidth = 1200;
         const svgHeight = 600;
@@ -56,20 +69,24 @@
         const chart = svg.append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        d3.csv("us-parks.csv").then(function(data) {
+        const tooltip = d3.select("#tooltip");
+
+        d3.csv("Smartphone.csv").then(function(data) {
 
             // Convert string values to numbers
             data.forEach(function(d) {
-                d.RecreationVisits = +d.RecreationVisits;
+                d.Daily_Phone_Hours = +d.Daily_Phone_Hours;
+                d.Sleep_Hours = +d.Sleep_Hours;
             });
 
             // Define X and Y scales
             const scaleX = d3.scaleLinear()
-                .domain([d3.min(data, d => d.Year), d3.max(data, d => d.Year)])
-                .range([0, width])
+                .domain([0, d3.max(data, d => d.Daily_Phone_Hours)])
+                .nice()
+                .range([0, width]);
 
             const scaleY = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.RecreationVisits)])
+                .domain([0, d3.max(data, d => d.Sleep_Hours)])
                 .nice()
                 .range([height, 0]);
 
@@ -77,8 +94,7 @@
             chart.append("g")
                 .attr("class", "axis axis-x")
                 .attr("transform", `translate(0, ${height})`)
-                .call(d3.axisBottom(scaleX))
-                .selectAll("text") 
+                .call(d3.axisBottom(scaleX));
 
             chart.append("g")
                 .attr("class", "axis axis-y")
@@ -90,16 +106,31 @@
                 .enter()
                 .append("circle")
                 .attr("class", "dot")
-                .attr("cx", d => scaleX(d.Year))
-                .attr("cy", d => scaleY(d.RecreationVisits))
-                .attr("r", 5);
+                .attr("cx", d => scaleX(d.Daily_Phone_Hours))
+                .attr("cy", d => scaleY(d.Sleep_Hours))
+                .attr("r", 5)
+                .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`<strong>${d.label}</strong>: ${d.value}`)
+                    .style("opacity", 1);
+            })
+            .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                tooltip.style("opacity", 0);
+            });
+
+
 
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
                 .attr("x", svgWidth / 2)
                 .attr("y", 30) 
                 .attr("text-anchor", "middle") 
-                .text("Yosemite National Park Recreation Visits - Scatter Plot");
+                .text("Phone Usage vs Sleep Hours - Scatter Plot");
 
             // X-axis label
             //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
@@ -108,17 +139,17 @@
                 .attr("text-anchor", "middle")
                 .attr("x", svgWidth / 2)
                 .attr("y", svgHeight - 20)
-                .text("Year");
+                .text("Daily Phone Hours");
 
             // Y-axis label
             svg.append("text")
                 .attr("class", "y label")
                 .attr("text-anchor", "middle")
                 .attr("x", -svgHeight / 2)
-                .attr("y", 15)
+                .attr("y", 8)
                 .attr("dy", ".75em")
                 .attr("transform", "rotate(-90)")
-                .text("Recreation Visits");
+                .text("Sleep Hours");
 
         });
     </script>

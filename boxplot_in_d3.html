@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Plot in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* CSS styles for the chart */
+        .box { 
+            fill: transparent; 
+            stroke: #64c8c8;
+            stroke-width: 2;
+        }
+        .median { 
+            stroke: #FA7E61; 
+            stroke-width: 4; 
+        }
+        .whisker { 
+            stroke: #305252;
+            stroke-width: 2; 
+        }
+        .bar:hover {
+            fill: orange;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+
+        .axis text {
+            font-size: 12px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <script>
+        // Aiming for grade A
+        // Starter code: in class - Bar Chart
+        // Source: https://observablehq.com/@d3/box-plot/2 and https://learning.oreilly.com/library/view/d3-js-in-action/9781633439177/OEBPS/Text/chapter-6.html#p116
+
+        // Set up the SVG container
+        const svgWidth = 1200;
+        const svgHeight = 600;
+        const margin = { top: 60, right: 20, bottom: 80, left: 100 };
+        
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight);
+
+
+        const chart = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        d3.csv("us-parks.csv").then(function(data) {
+
+            // Convert string values to numbers, source: https://observablehq.com/@d3/box-plot/2
+            data.forEach(function(d) {
+                d.RecreationVisits = +d.RecreationVisits;
+            });
+                const visits = data.map(d => d.RecreationVisits).sort(d3.ascending); // https://d3js.org/d3-array/sort
+                const q1 = d3.quantile(visits, 0.25);
+                const q2 = d3.quantile(visits, 0.50);
+                const q3 = d3.quantile(visits, 0.75);
+                const min = visits[0];
+                const max = visits[visits.length - 1];                
+                const iqr = q3 - q1;
+                const r0 = Math.max(min, q1 - iqr * 1.5); // Whiskers
+                const r1 = Math.min(max, q3 + iqr * 1.5);  
+
+            // Define Y scale
+            const scaleY = d3.scaleLinear()
+                .domain([0, max])
+                .nice()
+                .range([height, 0]);
+
+            // Add Y axis
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Add box plot
+            const bWidth = 100;
+            const bCenter = 150;
+
+            chart.append("rect")
+                .attr("class", "box")
+                .attr("x", bCenter - bWidth/ 2)
+                .attr("y", scaleY(q3))
+                .attr("width", bWidth)
+                .attr("height", scaleY(q1) - scaleY(q3));
+
+            // Median line
+            chart.append("line")
+                 .attr("class", "median")
+                 .attr("x1", bCenter - bWidth / 2)
+                 .attr("x2", bCenter + bWidth / 2)
+                 .attr("y1", scaleY(q2))
+                 .attr("y2", scaleY(q2));
+
+            // Whiskers
+            chart.append("line")
+                .attr("class", "whisker")
+                .attr("x1", bCenter)
+                .attr("x2", bCenter)
+                .attr("y1", scaleY(q1))
+                .attr("y2", scaleY(r0));
+
+            chart.append("line")
+                .attr("class", "whisker")
+                .attr("x1", bCenter - bWidth / 2)
+                .attr("x2", bCenter + bWidth / 2)
+                .attr("y1", scaleY(r0))
+                .attr("y2", scaleY(r0));
+
+            chart.append("line")
+                .attr("class", "whisker")
+                .attr("x1", bCenter)
+                .attr("x2", bCenter)
+                .attr("y1", scaleY(q3))
+                .attr("y2", scaleY(r1));
+
+            chart.append("line")
+                .attr("class", "whisker")
+                .attr("x1", bCenter - bWidth / 2)
+                .attr("x2", bCenter + bWidth / 2)
+                .attr("y1", scaleY(r1))
+                .attr("y2", scaleY(r1));
+
+            // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+            svg.append("text")
+                .attr("x", 300)
+                .attr("y", 30) 
+                .attr("text-anchor", "middle") 
+                .text("Yosemite National Park Recreation Visits - Box Plot");
+
+            // Y-axis label
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("x", -svgHeight / 2)
+                .attr("y", 8)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text("Recreation Visits");
+        });
+    </script>
+</body>
+</html>
