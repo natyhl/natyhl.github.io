@@ -130,7 +130,17 @@
             })
             .on("mouseleave", () => {
                 tooltip.style("opacity", 0);
-            });            
+            });   
+
+            // Bar labels
+            chart.selectAll(".bartext") // Source: https://stackoverflow.com/questions/18057917/adding-label-on-a-d3-bar-chart?rq=3
+               .data(data)
+               .join("text") 
+               .attr("class", "bar-label")
+               .attr("x", d => scaleX(d.Year) + 10)
+               .attr("y", d => scaleY(d.RecreationVisits) - 5)
+               .attr("text-anchor", "middle")
+               .text(d => d3.format(".2s")(d.RecreationVisits));
 
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
