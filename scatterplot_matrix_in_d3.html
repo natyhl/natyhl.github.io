@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scatterplot Matrix</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+</head>
+<body>
+<svg id="splom"></svg>
+<script>
+  // Starter code from post on EdStem
+  // Aiming for grade A, plus two extra credits
+const cellSize = 120;
+const padding  = 20;
+
+d3.csv("Smartphone.csv", d3.autoType).then(data => {
+  const cols = data.columns.filter(d => typeof data[0][d] === "number"); //source: https://observablehq.com/@d3/splom/2
+  const n    = cols.length;
+  const size = n * cellSize;
+
+  const svg = d3.select("#splom")
+    .attr("width",  size + padding)
+    .attr("height", size + padding + 40)
+    .append("g")
+    .attr("transform", `translate(${padding / 2},${padding / 2 + 40})`);
+
+  // One linear scale per column
+  const scales = {};
+  cols.forEach(col => {
+    scales[col] = d3.scaleLinear()
+      .domain(d3.extent(data, d => d[col])).nice()
+      .range([4, cellSize - 4]);
+  });
+
+  // Draw one cell per (row, col) pair
+  cols.forEach((yCol, row) => {
+    cols.forEach((xCol, col) => {
+      const g = svg.append("g")
+        .attr("transform", `translate(${col * cellSize},${row * cellSize})`);
+
+      // Cell border
+      g.append("rect")
+        .attr("width",  cellSize)
+        .attr("height", cellSize)
+        .attr("fill", "none")
+        .attr("stroke", "#aaa");
+
+      if (row === col) {
+        // Diagonal: just show the variable name
+        g.append("text")
+          .attr("x", cellSize / 2)
+          .attr("y", cellSize / 2)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .attr("font-size", "11px")
+          .text(xCol);
+      } else {
+        // Off-diagonal: scatter plot
+        g.selectAll("circle")
+          .data(data)
+          .join("circle")
+          .attr("cx", d => scales[xCol](d[xCol]))
+          .attr("cy", d => scales[yCol](d[yCol]))  /// 
+          .attr("r", 2)
+          .attr("fill", "steelblue")
+          .attr("opacity", 0.6);
+      }
+
+    });
+  });
+  // Add title
+            d3.select("#splom")
+              .append("text")
+              .attr("x", (size + padding) / 2)
+              .attr("y", 30) 
+              .attr("text-anchor", "middle") 
+              .attr("font-size", "16px")
+              .text("Smartphone Usage - Scatterplot Matrix");
+});
+</script>
+</body>
+</html>
