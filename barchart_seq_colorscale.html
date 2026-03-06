@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bar Chart in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <style>
+        /* CSS styles for the chart */
+        .bar {
+            fill: #64c8c8;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+
+        .axis text {
+            font-size: 12px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .bar-label {
+            font-size: 9px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+
+    <script>
+        // Aiming for grade A+
+        // Starter code: bar_chart_in_d3.html
+
+        // Set up the SVG container
+        const svgWidth = 1200;
+        const svgHeight = 600;
+        const margin = { top: 60, right: 300, bottom: 80, left: 100 };
+        
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight);
+
+
+        const chart = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        d3.csv("us-parks.csv").then(function(data) {
+
+            // Convert string values to numbers
+            data.forEach(function(d) {
+                d.RecreationVisits = +d.RecreationVisits;
+                d.Year = +d.Year; 
+            });
+
+            // Define X and Y scales
+            const scaleX = d3.scaleBand()
+                .domain(data.map(d => d.Year))
+                .range([0, width])
+                .padding(0.05);
+
+            const scaleY = d3.scaleLinear() //Source: https://d3js.org/d3-scale/log
+                .domain([0, d3.max(data, d => d.RecreationVisits)])
+                .nice()
+                .range([height, 0]);
+
+            const colorScale = d3.scaleSequential(d3.interpolateGreys) // source: https://d3-legend.susielu.com/, https://using-d3js.com/04_05_sequential_scales.html#i_6BMady1DM3
+                .domain([d3.min(data, d => d.RecreationVisits), d3.max(data, d => d.RecreationVisits)]);
+
+            // Add X and Y axes
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(scaleX))
+                .selectAll("text")
+                .attr("transform", "rotate(-45)")
+                .attr("dx", "-10px")
+                .attr("dy", "5px");
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Add bars
+            chart.selectAll(".bar")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("class", "bar")
+                .attr("x", d => scaleX(d.Year))
+                .attr("y", d => scaleY(d.RecreationVisits))
+                .attr("width", scaleX.bandwidth())
+                .attr("height", d => height - scaleY(d.RecreationVisits))
+                .style("fill", d => colorScale(d.RecreationVisits)); // Source:  https://using-d3js.com/04_05_sequential_scales.html#i_6BMady1DM3
+
+            // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+            svg.append("text")
+                .attr("x", svgWidth / 2)
+                .attr("y", 30) 
+                .attr("text-anchor", "middle") 
+                .text("Yosemite National Park Recreation Visits - Bar Chart");
+
+            // X-axis label
+            //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
+            svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "middle")
+                .attr("x", svgWidth / 2)
+                .attr("y", svgHeight - 20)
+                .text("Year");
+
+            // Y-axis label
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("x", -svgHeight / 2)
+                .attr("y", 8)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text("Recreation Visits");
+
+            // Add legend
+                svg.append("g")
+                   .attr("class", "legendSequential")
+                   .attr("transform", `translate(${width + margin.left + 20}, 100)`);
+
+                var legendSequential = d3.legendColor()
+                    .shapeWidth(30)
+                    .cells(10)
+                    .orient("vertical")
+                    .scale(colorScale) 
+                    .title("Recreation Visits");
+
+                svg.select(".legendSequential")
+                  .call(legendSequential);
+            });
+    </script>
+</body>
+</html>
