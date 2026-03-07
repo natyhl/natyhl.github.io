@@ -4,14 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Chart with a Sequential Color Scale</title>
+    <title>Diverging Bar Chart</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
     <style>
         /* CSS styles for the chart */
-        .bar {
-            fill: #64c8c8;
-        }
         .axis-x path,
         .axis-y path {
             fill: none;
@@ -30,9 +27,6 @@
         .title {
             font-size: 18px;
             font-weight: bold;
-        }
-        .bar-label {
-            font-size: 9px;
         }
     </style>
 </head>
@@ -60,41 +54,36 @@
         const chart = svg.append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
-        d3.csv("us-parks.csv").then(function(data) {
+        d3.csv("Smartphone_smaller.csv").then(function(data) {
 
             // Convert string values to numbers
             data.forEach(function(d) {
-                d.RecreationVisits = +d.RecreationVisits;
-                d.Year = +d.Year; 
+                d.Stress_Level = +d.Stress_Level;
             });
 
             // Define X and Y scales
-            const scaleX = d3.scaleBand()
-                .domain(data.map(d => d.Year))
-                .range([0, width])
-                .padding(0.05);
+            const scaleX = d3.scaleLinear()
+                .domain([-d3.max(data, d => d.Stress_Level), d3.max(data, d => d.Stress_Level)]) // diverging bar chart scale
+                .range([0, width]);
 
-            const scaleY = d3.scaleLinear() //Source: https://d3js.org/d3-scale/log
-                .domain([0, d3.max(data, d => d.RecreationVisits)])
-                .nice()
-                .range([height, 0]);
+            const scaleY = d3.scaleBand() // source: https://observablehq.com/@d3/diverging-bar-chart/2
+                .domain(data.map(d => d.User_ID))
+                .range([0, height])
+                .padding(0.1); // for better visibility
 
-            const colorScale = d3.scaleSequential(d3.interpolateGreys) // source: https://d3-legend.susielu.com/, https://using-d3js.com/04_05_sequential_scales.html#i_6BMady1DM3
-                .domain([d3.min(data, d => d.RecreationVisits), d3.max(data, d => d.RecreationVisits)]);
+            const colorScale = d3.scaleOrdinal() // source: https://d3-legend.susielu.com/
+                .domain(["Female", "Male"])
+                .range([d3.schemeRdBu[3][0], d3.schemeRdBu[3][2]]); // source: https://observablehq.com/@d3/diverging-bar-chart/2 // Red for Female, Blue for Male
 
-            // Add X and Y axes
+            // Add axes
             chart.append("g")
                 .attr("class", "axis axis-x")
                 .attr("transform", `translate(0, ${height})`)
-                .call(d3.axisBottom(scaleX))
-                .selectAll("text")
-                .attr("transform", "rotate(-45)")
-                .attr("dx", "-10px")
-                .attr("dy", "5px");
+                .call(d3.axisBottom(scaleX));
 
             chart.append("g")
                 .attr("class", "axis axis-y")
-                .call(d3.axisLeft(scaleY).ticks(5));
+                .attr("transform", `translate(${scaleX(0)}, 0)`)
 
             // Add bars
             chart.selectAll(".bar")
@@ -102,18 +91,24 @@
                 .enter()
                 .append("rect")
                 .attr("class", "bar")
-                .attr("x", d => scaleX(d.Year))
-                .attr("y", d => scaleY(d.RecreationVisits))
-                .attr("width", scaleX.bandwidth())
-                .attr("height", d => height - scaleY(d.RecreationVisits))
-                .style("fill", d => colorScale(d.RecreationVisits)); // Source:  https://using-d3js.com/04_05_sequential_scales.html#i_6BMady1DM3
+                .attr("x", d => {
+                    if (d.Gender === "Female") {
+                        return scaleX(-d.Stress_Level); // Female on left
+                    } else {
+                        return scaleX(0); // and male on right
+                    }
+                })
+              .attr("y", d => scaleY(d.User_ID))
+              .attr("width", d => Math.abs(scaleX(d.Stress_Level) - scaleX(0)))
+              .attr("height", scaleY.bandwidth())
+              .style("fill", d => d.Gender == "Female" ? d3.schemeRdBu[3][0] : d3.schemeRdBu[3][2]);
 
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
                 .attr("x", svgWidth / 2)
                 .attr("y", 30) 
                 .attr("text-anchor", "middle") 
-                .text("Yosemite National Park Recreation Visits - Bar Chart");
+                .text("Stress Level by Gender - Diverging Bar Chart");
 
             // X-axis label
             //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
@@ -122,7 +117,7 @@
                 .attr("text-anchor", "middle")
                 .attr("x", svgWidth / 2)
                 .attr("y", svgHeight - 20)
-                .text("Year");
+                .text("Stress Level");
 
             // Y-axis label
             svg.append("text")
@@ -132,22 +127,21 @@
                 .attr("y", 8)
                 .attr("dy", ".75em")
                 .attr("transform", "rotate(-90)")
-                .text("Recreation Visits");
+                .text("Gender");
 
-            // Add legend
+            // Add legend, source: https://d3-legend.susielu.com/
                 svg.append("g")
-                   .attr("class", "legendSequential")
+                   .attr("class", "legendOrdinal")
                    .attr("transform", `translate(${width + margin.left + 20}, 100)`);
 
-                var legendSequential = d3.legendColor()
+                var legendOrdinal = d3.legendColor()
                     .shapeWidth(30)
-                    .cells(10)
                     .orient("vertical")
                     .scale(colorScale) 
-                    .title("Recreation Visits");
+                    .title("Gender");
 
-                svg.select(".legendSequential")
-                  .call(legendSequential);
+                svg.select(".legendOrdinal")
+                  .call(legendOrdinal);
             });
     </script>
 </body>
