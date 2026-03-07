@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scatter Plot in D3</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <style>
+        /* CSS styles for the chart */
+        .dot {
+            fill: #64c8c8;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+
+        .axis text {
+            font-size: 12px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Aiming for grade A - both extra credits
+        // Starter code: in class - Bar Chart
+        // Set up the SVG container
+        const svgWidth = 1200;
+        const svgHeight = 600;
+        const margin = { top: 60, right: 300, bottom: 80, left: 100 };
+        
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight);
+
+
+        const chart = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const tooltip = d3.select("#tooltip");
+
+        d3.csv("Smartphone.csv").then(function(data) {
+
+            // Convert string values to numbers
+            data.forEach(function(d) {
+                d.Daily_Phone_Hours = +d.Daily_Phone_Hours;
+                d.Sleep_Hours = +d.Sleep_Hours;
+            });
+
+            // Define X and Y scales
+            const scaleX = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.Daily_Phone_Hours)])
+                .nice()
+                .range([0, width]);
+
+            const scaleY = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.Sleep_Hours)])
+                .nice()
+                .range([height, 0]);
+
+            const colorScale = d3.scaleOrdinal()
+                .domain(["Female", "Male", "Other"])
+                .range(["rgb(252,141,89)", "rgb(255,255,191)", "rgb(153,213,148)"]); // source: https://d3-legend.susielu.com/#color-ordinal, https://colorbrewer2.org/#type=diverging&scheme=Spectral&n=3
+
+            // Add X and Y axes
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(scaleX));
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5));
+
+            // Add dots
+            chart.selectAll(".dot")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => scaleX(d.Daily_Phone_Hours))
+                .attr("cy", d => scaleY(d.Sleep_Hours))
+                .attr("r", 5)
+                .style("fill", d => colorScale(d.Gender));
+
+
+            // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+            svg.append("text")
+                .attr("x", svgWidth / 2)
+                .attr("y", 30) 
+                .attr("text-anchor", "middle") 
+                .text("Phone Usage vs Sleep Hours by Gender - Scatter Plot");
+
+            // X-axis label
+            //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
+            svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "middle")
+                .attr("x", svgWidth / 2)
+                .attr("y", svgHeight - 20)
+                .text("Daily Phone Hours");
+
+            // Y-axis label
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("x", -svgHeight / 2)
+                .attr("y", 8)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text("Sleep Hours");
+
+            // Add legend, source: https://d3-legend.susielu.com/
+                svg.append("g")
+                   .attr("class", "legendOrdinal")
+                   .attr("transform", `translate(${width + margin.left + 20}, 100)`);
+
+                var legendOrdinal = d3.legendColor()
+                    .shapeWidth(30)
+                    .orient("vertical")
+                    .scale(colorScale) 
+                    .title("Gender");
+
+                svg.select(".legendOrdinal")
+                  .call(legendOrdinal);
+
+        });
+    </script>
+</body>
+</html>
