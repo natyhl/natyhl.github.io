@@ -37,7 +37,7 @@
     <div class="tooltip" id="tooltip"></div>
 
     <script>
-        // Aiming for grade A - both extra credits
+        // Aiming for grade A
         // Starter code: in class - Bar Chart
         // Set up the SVG container
         const svgWidth = 1200;
@@ -105,7 +105,7 @@
 
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
-                .attr("x", svgWidth / 2)
+                .attr("x", margin.left + width / 2)
                 .attr("y", 30) 
                 .attr("text-anchor", "middle") 
                 .text("Phone Usage vs Sleep Hours by Gender - Scatter Plot");
@@ -115,7 +115,7 @@
             svg.append("text")
                 .attr("class", "x label")
                 .attr("text-anchor", "middle")
-                .attr("x", svgWidth / 2)
+                .attr("x", margin.left + width / 2)
                 .attr("y", svgHeight - 20)
                 .text("Daily Phone Hours");
 
