@@ -120,7 +120,7 @@
             svg.append("text")
                 .attr("class", "x label")
                 .attr("text-anchor", "middle")
-                .attr("x", svgWidth / 2)
+                .attr("x", margin.left + width / 2)
                 .attr("y", svgHeight - 20)
                 .text("Year");
 
@@ -143,6 +143,7 @@
                     .shapeWidth(30)
                     .cells(10)
                     .orient("vertical")
+                    .labelFormat(d3.format(".2s"))
                     .scale(colorScale) 
                     .title("Recreation Visits");
 
