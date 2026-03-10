@@ -79,7 +79,7 @@
                 .nice()
                 .range([height, 0]);
 
-            const colorScale = d3.scaleSequential(d3.interpolateGreys) // source: https://d3-legend.susielu.com/, https://using-d3js.com/04_05_sequential_scales.html#i_6BMady1DM3
+            const colorScale = d3.scaleSequential(d3.interpolateBlues) // source: https://d3-legend.susielu.com/, https://using-d3js.com/04_05_sequential_scales.html#i_6BMady1DM3
                 .domain([d3.min(data, d => d.RecreationVisits), d3.max(data, d => d.RecreationVisits)]);
 
             // Add X and Y axes
