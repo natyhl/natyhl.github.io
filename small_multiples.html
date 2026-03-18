@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Small Multiples</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <style>
+        /* CSS styles for the chart */
+        .line {
+            fill: none;
+            stroke-width: 2;
+        }
+        circle:hover {
+            fill: orange;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+
+        .axis text {
+            font-size: 8px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+    <!-- Create a div where the graph will take place, Source: https://d3-graph-gallery.com/graph/line_smallmultiple.html-->
+    <div id="my_dataviz"></div> 
+
+    <script>
+        // Aiming for grade A
+        // Set up the SVG container
+        var margin = {top: 30, right: 0, bottom: 30, left: 50},
+        width = 210 - margin.left - margin.right,
+        height = 210 - margin.top - margin.bottom;
+
+        // Source daytaset: https://observablehq.com/@nikomccarty/multiline-chart-d3
+        d3.csv("stock_data_d3.csv").then(function(rawData) {
+
+            const dateParser = d3.timeParse("%m/%d/%Y"); // Source: https://observablehq.com/@nikomccarty/multiline-chart-d3
+
+            // Convert string values to numbers
+            const allData = rawData.map(({ date, variable, value }) => ({
+                date: dateParser(date),
+                name: variable,
+                value: +value
+            })); // Source: https://observablehq.com/@nikomccarty/multiline-chart-d3
+
+            // group the data: I want to draw one line per group, Source: https://d3-graph-gallery.com/graph/line_smallmultiple.html 
+            // var sumstat = d3.nest() // nest function allows to group the calculation per level of a factor
+            //     .key(function(d) { return d.name;})
+            //     .entries(data);
+            var sumstat = Array.from(d3.group(allData, d => d.name), ([key, values]) => ({ key, values }));
+
+            // What is the list of groups?
+            allKeys = sumstat.map(function(d){return d.key})
+
+            // Define X and Y scales
+            const scaleX = d3.scaleTime()
+               .domain(d3.extent(allData, d => d.date)
+                ) // Source: https://d3-graph-gallery.com/graph/line_smallmultiple.html
+               .range([0, width]);
+
+            const scaleY = d3.scaleLinear()
+                .domain([d3.min(allData, d => d.value), d3.max(allData, d => d.value)])
+                .nice()
+                .range([height, 0]);
+
+            // Color scale
+            const colors = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854"];
+
+            const colorScale = d3.scaleOrdinal()
+                .domain(['AMZN', 'GOOG', 'FB', 'BABA', 'JD'])
+                .range(colors); // From ColorBrewer
+
+            //Define line generator, source: https://learning.oreilly.com/library/view/interactive-data-visualization/9781491921296/ch11.html#idm140093188423200
+            const line = d3.line()
+                .x(d => scaleX(d.date)) 
+                .y(d => scaleY(d.value)); // Source: https://observablehq.com/@nikomccarty/multiline-chart-d3
+
+            // Add an svg element for each group, source: https://d3-graph-gallery.com/graph/line_smallmultiple.html
+            var svg = d3.select("#my_dataviz")
+            .selectAll("uniqueChart")
+            .data(sumstat)
+            .enter()
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")"); 
+            // Draw the line
+            svg
+                .append("path")
+                .attr("fill", "none")
+                .attr("stroke", function(d){ return colorScale(d.key) })
+                .attr("stroke-width", 1.9)
+                .attr("d", function(d){
+                    return d3.line()
+                      .x(function(d) { return scaleX(d.date); })
+                      .y(function(d) { return scaleY(d.value); })
+                      (d.values)
+                  })
+
+            // Add X and Y axes
+            svg.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(scaleX));
+
+            svg.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5).tickFormat(d3.format("$,.0f"))); // Source: https://d3js.org/d3-format
+
+            // Add title, https://d3-graph-gallery.com/graph/line_smallmultiple.html
+            svg.append("text")
+                .attr("text-anchor", "start")
+                .attr("y", -5)
+                .attr("x", 0)
+                .text(function(d){ return(d.key)})
+                .style("fill", function(d){ return colorScale(d.key) })
+
+            // X-axis label
+            //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("x", width / 2)
+                .attr("y", height + margin.bottom - 2)
+                .attr("font-size", "8px")
+                .text("Year");
+
+            // Y-axis label
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("x", -height / 2)
+                .attr("y", -50)
+                .attr("dy", ".75em")
+                .attr("font-size", "8px")
+                .attr("transform", "rotate(-90)")
+                .text("Stock Price (USD)");
+
+            // Add legend, source: https://d3-legend.susielu.com/
+            const legendSvg = d3.select("#my_dataviz")
+                   .append("svg")
+                   .attr("width", 120)            
+                   .attr("height", 160);
+
+            legendSvg.append("g")
+                   .attr("class", "legendOrdinal")
+                   .attr("transform", `translate(10,20)`);
+
+                var legendOrdinal = d3.legendColor()
+                    .shapeWidth(30)
+                    .orient("vertical")
+                    .scale(colorScale) 
+                    .title("Stock");
+
+                legendSvg.select(".legendOrdinal")
+                  .call(legendOrdinal);
+        });
+    </script>
+</body>
+</html>
