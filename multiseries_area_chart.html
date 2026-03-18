@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-line Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <style>
+        /* CSS styles for the chart */
+        .area {
+            opacity: 0.3;
+        }
+        circle:hover {
+            fill: orange;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+
+        .axis text {
+            font-size: 12px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+    <!-- Tooltip element -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Aiming for grade A
+        // Set up the SVG container
+        const svgWidth = 1200;
+        const svgHeight = 600;
+        const margin = { top: 60, right: 250, bottom: 80, left: 100 };
+        
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight);
+
+         const tooltip = d3.select("#tooltip");
+
+
+        const chart = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Source daytaset: https://observablehq.com/@nikomccarty/multiline-chart-d3
+        d3.csv("stock_data_d3.csv").then(function(rawData) {
+
+            const dateParser = d3.timeParse("%m/%d/%Y"); // Source: https://observablehq.com/@nikomccarty/multiline-chart-d3
+
+            // Convert string values to numbers
+            const allData = rawData.map(({ date, variable, value }) => ({
+                date: dateParser(date),
+                name: variable,
+                value: +value
+            })); // Source: https://observablehq.com/@nikomccarty/multiline-chart-d3
+
+            // Filter data, source: https://observablehq.com/@nikomccarty/multiline-chart-d3
+            const data = [
+                allData.filter(({ name }) => name === 'AMZN'),
+                allData.filter(({ name }) => name === 'GOOG'),
+                allData.filter(({ name }) => name === 'FB'),
+                allData.filter(({ name }) => name === 'BABA'),
+                allData.filter(({ name }) => name === 'JD')
+            ]; 
+
+            // Define X and Y scales
+            const scaleX = d3.scaleTime()
+               .domain([
+                    data[0][0].date,
+                    data[0][data[0].length - 1].date
+                ]) // Source: https://observablehq.com/@nikomccarty/multiline-chart-d3
+               .range([0, width]);
+
+            const scaleY = d3.scaleLinear()
+                .domain([d3.min(allData, d => d.value), d3.max(allData, d => d.value)])
+                .nice()
+                .range([height, 0]);
+
+            // Color scale
+            const colors = ["#66c2a5", "#fc8d62", "#8da0cb", "#e78ac3", "#a6d854"];
+
+            const colorScale = d3.scaleOrdinal()
+                .domain(['AMZN', 'GOOG', 'FB', 'BABA', 'JD'])
+                .range(colors); // From ColorBrewer
+
+            // Add X and Y axes
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(scaleX));
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(scaleY).ticks(5).tickFormat(d3.format("$,.0f"))); // Source: https://d3js.org/d3-format
+
+            //Define line generator, source: https://learning.oreilly.com/library/view/interactive-data-visualization/9781491921296/ch11.html#idm140093188423200
+            const area = d3.area() // Source: https://d3-graph-gallery.com/graph/area_basic.html
+                .x(d => scaleX(d.date)) 
+                .y0(scaleY(0)) // Source: https://d3js.org/d3-shape/area
+                .y1(function(d) { return scaleY(d.value) }); // Source: https://d3-graph-gallery.com/graph/area_basic.html
+
+            // Add line
+            chart.selectAll("path.area") // Source:https://observablehq.com/@giorgi-ghviniashvili/introduction-to-d3-js-and-building-a-chart-togethe
+                .data(data)
+                .join("path")
+                .attr("class", "area")
+                .attr("d", area)
+                .style("fill", (d, i) => colors[i])
+                .style("stroke", (d, i) => colors[i])  
+                .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`<strong>${d[0].name}</strong>`)
+                    .style("opacity", 1);
+                })
+                .on("mousemove", (event) => {
+                    tooltip
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top",  (event.pageY - 28) + "px");
+                })
+                .on("mouseleave", () => {
+                    tooltip.style("opacity", 0);
+                });
+
+            // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+            svg.append("text")
+                .attr("x", svgWidth / 2)
+                .attr("y", 30) 
+                .attr("text-anchor", "middle") 
+                .text("Tech Stock Prices (2014-2020) - Multi-series Area Chart");
+
+            // X-axis label
+            //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
+            svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "middle")
+                .attr("x", svgWidth / 2)
+                .attr("y", svgHeight - 20)
+                .text("Year");
+
+            // Y-axis label
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("x", -svgHeight / 2)
+                .attr("y", 8)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text("Stock Price (USD)");
+
+            // Add legend, source: https://d3-legend.susielu.com/
+                svg.append("g")
+                   .attr("class", "legendOrdinal")
+                   .attr("transform", `translate(${width + margin.left + 20}, 100)`);
+
+                var legendOrdinal = d3.legendColor()
+                    .shapeWidth(30)
+                    .orient("vertical")
+                    .scale(colorScale) 
+                    .title("Stock");
+
+                svg.select(".legendOrdinal")
+                  .call(legendOrdinal);
+        });
+    </script>
+</body>
+</html>
