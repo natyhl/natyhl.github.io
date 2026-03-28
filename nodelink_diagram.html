@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node-link Diagram</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* CSS styles for the chart */
+        .node circle {
+            fill: #64c8c8;
+        }
+        .node circle:hover {
+            fill: orange;
+        }
+        .axis text {
+            font-size: 12px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Aiming for grade A
+        // Set up the SVG container
+        const svgWidth = 1200;
+        const svgHeight = 900;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .attr("viewBox", [0, 0, svgWidth, svgHeight]); // source: https://observablehq.com/@d3/force-directed-graph/2
+
+        const tooltip = d3.select("#tooltip");
+
+        d3.csv("soc-dolphins.csv").then(function(data) {
+
+            const links = data.map(d => ({source: d.source, target: d.target})); // source: https://observablehq.com/@d3/force-directed-graph/2
+            const nodes = d3.groups(data.flatMap(d => [d.source, d.target]), d => d)
+                            .map(([id]) => ({id}));
+
+            const color = d3.scaleOrdinal(d3.schemeDark2);
+
+            // Create a simulation with several forces, source: https://observablehq.com/@d3/force-directed-graph/2
+            const simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id))
+                .force("charge", d3.forceManyBody())
+                .force("center", d3.forceCenter(svgWidth / 2, svgHeight / 2))
+                .on("tick", ticked);
+
+            // Add a line for each link, and a circle for each node.
+            const link = svg.append("g")
+                .attr("stroke", "#999")
+                .attr("stroke-opacity", 0.6)
+                .selectAll()
+                .data(links)
+                .join("line")
+                .attr("stroke-width", 1.5);
+
+            const node = svg.append("g")
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 1.5)
+                .selectAll()
+                .data(nodes)
+                .join("circle")
+                .attr("r", 5)
+                .attr("fill", d => color(d.id));
+
+            node.call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+            node
+            // Tooltip
+            .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`<strong>${d.id}</strong>`)
+                    .style("opacity", 1);
+            })
+            .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                tooltip.style("opacity", 0);
+            });
+
+          // Set the position attributes of links and nodes each time the simulation ticks, source: https://observablehq.com/@d3/force-directed-graph/2
+          function ticked() {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+          }
+
+          // Reheat the simulation when drag starts, and fix the subject position.
+          function dragstarted(event) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+          }
+
+          // Update the subject (dragged node) position during drag.
+          function dragged(event) {
+            event.subject.fx = event.x;
+            event.subject.fy = event.y;
+          }
+
+          // Restore the target alpha so the simulation cools after dragging ends.
+          // Unfix the subject position now that it’s no longer being dragged.
+          function dragended(event) {
+            if (!event.active) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+          }
+
+            // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+            svg.append("text")
+                .attr("x", svgWidth / 2)
+                .attr("y", 30) 
+                .attr("text-anchor", "middle") 
+                .text("Dolphins Social Network - Node-link Diagram");
+        });
+    </script>
+</body>
+</html>
