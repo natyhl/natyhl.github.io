@@ -58,7 +58,7 @@
         // Set up the SVG container
         const svgWidth = 1200;
         const svgHeight = 1000;
-        const margin = { top: 60, right: 20, bottom: 80, left: 100 };
+        const margin = { top: 150, right: 20, bottom: 80, left: 100 };
         
         const width = svgWidth - margin.left - margin.right;
         const height = svgHeight - margin.top - margin.bottom;
@@ -78,7 +78,7 @@
         d3.csv("soc-dolphins.csv").then(function(data) {
 
             // Get node names
-            const nodes = d3.groups(data.map(d => [d.source.trim(), d.target.trim()]), d => d)
+            const nodes = d3.groups(data.flatMap(d => [d.source.trim(), d.target.trim()]), d => d)
                 .map(([id]) => id)
                 .sort();
 
@@ -114,20 +114,22 @@
                 .range([0, height])
                 .padding(0.1);
 
-            var color = d3.scaleSequential(d3.interpolatePuBuGn)
+            var color = d3.scaleSequential(d3.interpolateBlues)
                 .domain([0,1]);
 
             const make_class = (item) => item.toLowerCase().split(' ').join('_').split('-').join('') // source: https://observablehq.com/@fabiodesousa/adjacency-matrix
             const make_id = d => `coords_${Math.floor(x(d.xval))}_${Math.floor(y(d.yval))}` // source: https://observablehq.com/@fabiodesousa/adjacency-matrix
 
+            const tooltip = d3.select("#tooltip");
+
             // Add X and Y axes
             chart.append("g")
                 .attr("class", "axis axis-x")
-                .call(d3.axisTop(x).tickSize(0))               
+                .call(d3.axisTop(x))              
                 .selectAll("text") 
                 .attr("transform", "rotate(-45)")
-                .attr("dx", "5px")
-                .attr("dy", "5px");
+                .attr("dx", "10px")
+                .attr("dy", "0px");
 
             chart.append("g")
                 .attr("class", "axis axis-y")
@@ -143,7 +145,7 @@
                 .data(d => categories.map(e => {return {'xval' : d.index, 'yval' : e, 'count': d[e]}}))
                 .enter().append("g")
                 .attr("class", (d, i) => `${i} tile`)
-                
+
                 .on("mouseover", d => d3.select(`#${make_id(d)}`).transition().duration(0.25).style("opacity", 1))
                 .on("mouseout", d => d3.select(`#${make_id(d)}`).transition().style("opacity", 0))
               
@@ -168,7 +170,7 @@
 
                 .on("mouseover", (event, d) => {
                 tooltip
-                    .html(`<strong>Year:</strong> ${d.Year} <strong>Visits:</strong> ${d3.format(".2s")(d.RecreationVisits)}`)
+                    .html(`<strong>${d.xval}</strong> — <strong>${d.yval}</strong>: ${d.count ? "connected" : "not connected"}`)
                     .style("opacity", 1);
             })
             .on("mousemove", (event) => {
