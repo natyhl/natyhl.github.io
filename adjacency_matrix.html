@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjacency Matrix</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* CSS styles for the chart */
+        .bar {
+            fill: #64c8c8;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+
+        .axis text {
+            font-size: 10px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .bar-label {
+            font-size: 10px;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Aiming for grade A
+        // Set up the SVG container
+        const svgWidth = 1200;
+        const svgHeight = 1000;
+        const margin = { top: 60, right: 20, bottom: 80, left: 100 };
+        
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .style("width", "100%") // source: https://observablehq.com/@fabiodesousa/adjacency-matrix
+            .style("height", "auto")
+            .style("font", "1rem verdana");
+
+
+        const chart = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        d3.csv("soc-dolphins.csv").then(function(data) {
+
+            // Get node names
+            const nodes = d3.groups(data.map(d => [d.source.trim(), d.target.trim()]), d => d)
+                .map(([id]) => id)
+                .sort();
+
+            const adjacency = {};
+            nodes.forEach(n => {
+                adjacency[n] = {};
+                nodes.forEach(m => { adjacency[n][m] = 0; }); // initialize
+            });
+
+            data.forEach(d => {
+                const a = d.source.trim();
+                const b= d.target.trim();
+                adjacency[a][b] = 1; // mark connection
+                adjacency[b][a] = 1;
+            });
+
+            const categories = nodes;
+            // each doplhin becomes row in matrix
+            const matrix = nodes.map(rowNode => { 
+                adjacency[rowNode].index = rowNode;
+                return adjacency[rowNode];
+            });
+
+
+            // Define X and Y scales
+            const x = d3.scaleBand()
+                .domain(nodes)
+                .range([0, width])
+                .padding(0.1);
+
+            const y = d3.scaleBand()
+                .domain(nodes)
+                .range([0, height])
+                .padding(0.1);
+
+            var color = d3.scaleSequential(d3.interpolatePuBuGn)
+                .domain([0,1]);
+
+            const make_class = (item) => item.toLowerCase().split(' ').join('_').split('-').join('') // source: https://observablehq.com/@fabiodesousa/adjacency-matrix
+            const make_id = d => `coords_${Math.floor(x(d.xval))}_${Math.floor(y(d.yval))}` // source: https://observablehq.com/@fabiodesousa/adjacency-matrix
+
+            // Add X and Y axes
+            chart.append("g")
+                .attr("class", "axis axis-x")
+                .call(d3.axisTop(x).tickSize(0))               
+                .selectAll("text") 
+                .attr("transform", "rotate(-45)")
+                .attr("dx", "5px")
+                .attr("dy", "5px");
+
+            chart.append("g")
+                .attr("class", "axis axis-y")
+                .call(d3.axisLeft(y));
+
+            // Add cells, source: https://observablehq.com/@fabiodesousa/adjacency-matrix
+            const rects = chart.append("g")
+                .selectAll("g")
+                .data(matrix)
+                .enter().append("g")
+                .attr("class", (d, i) => `${i} bar`)
+                .selectAll("g")
+                .data(d => categories.map(e => {return {'xval' : d.index, 'yval' : e, 'count': d[e]}}))
+                .enter().append("g")
+                .attr("class", (d, i) => `${i} tile`)
+                
+                .on("mouseover", d => d3.select(`#${make_id(d)}`).transition().duration(0.25).style("opacity", 1))
+                .on("mouseout", d => d3.select(`#${make_id(d)}`).transition().style("opacity", 0))
+              
+            rects.append("rect")
+                  .attr("x", d => x(d.xval))
+                  .attr("y", d => y(d.yval))
+                  .attr("width", x.bandwidth())
+                  .attr("height", y.bandwidth())
+                  .style("fill", d => color(d.count))
+                  .append("title")
+                  .text(d => d.count)
+              
+            rects.append("text")
+                  .attr("id", d => make_id(d))
+                  .attr("dy", ".35em")
+                  .attr("x", d => x(d.xval) + x.bandwidth() / 2)
+                  .attr("y", d => y(d.yval) + y.bandwidth() / 2)
+                  .text(d => d.count)
+                  .style("font-size", "1rem")
+                  .style("opacity", "0")
+                  .style("text-anchor", "middle")
+
+                .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`<strong>Year:</strong> ${d.Year} <strong>Visits:</strong> ${d3.format(".2s")(d.RecreationVisits)}`)
+                    .style("opacity", 1);
+            })
+            .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+            })
+            .on("mouseleave", () => {
+                tooltip.style("opacity", 0);
+            });   
+
+            // Bar labels
+            chart.selectAll(".bartext") // Source: https://stackoverflow.com/questions/18057917/adding-label-on-a-d3-bar-chart?rq=3
+               .data(data)
+               .join("text") 
+               .attr("class", "bar-label")
+               .attr("x", d => scaleX(d.Year) + 10)
+               .attr("y", d => scaleY(d.RecreationVisits) - 5)
+               .attr("text-anchor", "middle")
+               .text(d => d3.format(".2s")(d.RecreationVisits));
+
+            // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+            svg.append("text")
+                .attr("x", svgWidth / 2)
+                .attr("y", 30) 
+                .attr("text-anchor", "middle") 
+                .text("Dolphins Social Network – Adjacency Matrix");
+
+            // X-axis label
+            //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
+            svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "middle")
+                .attr("x", svgWidth / 2)
+                .attr("y", svgHeight - 20)
+                .text("Year");
+
+            // Y-axis label
+            svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "middle")
+                .attr("x", -svgHeight / 2)
+                .attr("y", 8)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text("Recreation Visits (Log scale)");
+        });
+    </script>
+</body>
+</html>
