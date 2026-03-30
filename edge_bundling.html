@@ -4,19 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Node-link Diagram</title>
+    <title>Edge-Bundling</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         /* CSS styles for the chart */
-        .node circle {
-            fill: #64c8c8;
-        }
-        .node circle:hover {
-            fill: orange;
-        }
-        .axis text {
-            font-size: 12px;
-        }
         .title {
             font-size: 18px;
             font-weight: bold;
@@ -42,19 +33,12 @@
         // Aiming for grade A
         // Set up the SVG container
         const svgWidth = 1200;
-        const svgHeight = 900;
+        const svgHeight = 1200;
         const radius = svgWidth / 2;
 
         const colornone = "#ccc"; // source: https://observablehq.com/@d3/hierarchical-edge-bundling
         const colorin   = "#f00"; 
         const colorout  = "#00f";
-
-        const svg = d3.select("#chart-container")
-            .append("svg")
-            .attr("width", svgWidth)
-            .attr("height", svgHeight)
-            .attr("viewBox", [-radius, -radius, svgWidth, svgHeight] // source: https://observablehq.com/@d3/hierarchical-edge-bundling
-            .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
 
         const tooltip = d3.select("#tooltip");
 
@@ -65,28 +49,46 @@
                 .map(([id]) => id)
                 .sort();
 
-            const adjacency = {};
+            const neighbours = {};
             nodes.forEach(n => {
-                adjacency[n] = {};
-                nodes.forEach(m => { adjacency[n][m] = 0; }); // initialize
+                neighbours[n] = nodes.filter(m => // source: https://d3js.org/d3-selection/selecting
+                data.some(d => (d.source.trim() == n && d.target.trim() == m) || (d.target.trim() == n && d.source.trim() == m)));
             });
 
-            data.forEach(d => {
-                const a = d.source.trim();
-                const b= d.target.trim();
-                adjacency[a][b] = 1; // mark connection
-                adjacency[b][a] = 1;
-            });
+            function hierarchy(data, delimiter = ".") { // source: https://observablehq.com/@d3/hierarchical-edge-bundling
+              let root;
+              const map = new Map;
+              data.forEach(function find(data) {
+                const {name} = data;
+                if (map.has(name)) return map.get(name);
+                const i = name.lastIndexOf(delimiter);
+                map.set(name, data);
+                if (i >= 0) {
+                  find({name: name.substring(0, i), children: []}).children.push(data);
+                  data.name = name.substring(i + 1);
+                } else {
+                  root = data;
+                }
+                return data;
+              });
+              return root;
+            }
+
+            // store connections
+            const hData = nodes.map(n => ({ name: "root." + n }));
+
+            const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .attr("viewBox", [-radius, -radius, svgWidth, svgHeight]) // source: https://observablehq.com/@d3/hierarchical-edge-bundling
+            .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
 
             // source: https://observablehq.com/@d3/hierarchical-edge-bundling
             const tree = d3.cluster()
                 .size([2 * Math.PI, radius - 100]);
-            const root = tree(bilink(d3.hierarchy(data)
+            const root = tree(bilink(d3.hierarchy(hierarchy(hData))
                 .sort((a, b) => d3.ascending(a.height, b.height) || d3.ascending(a.data.name, b.data.name))));
-
-            const links = data.map(d => ({source: d.source, target: d.target})); // source: https://observablehq.com/@d3/force-directed-graph/2
-            const nodes = d3.groups(data.flatMap(d => [d.source, d.target]), d => d)
-                            .map(([id]) => ({id}));
 
             // source: https://observablehq.com/@d3/hierarchical-edge-bundling
             const node = svg.append("g")
@@ -103,10 +105,9 @@
                   .each(function(d) { d.text = this; })
                   .on("mouseover", overed)
                   .on("mouseout", outed)
-                  .call(text => text.append("title").text(d => `${id(d)}
+                  .call(text => text.append("title").text(d => `${d.data.name}
             ${d.outgoing.length} outgoing
             ${d.incoming.length} incoming`));
-
 
             const line = d3.lineRadial()
                 .curve(d3.curveBundle.beta(0.85))
@@ -124,6 +125,7 @@
                   .each(function(d) { d.path = this; });
 
               function overed(event, d) {
+                tooltip.html(`<strong>${d.data.name}</strong>: ${d.outgoing.length} connections`).style("opacity", 1).style("left", (event.pageX + 12) + "px").style("top", (event.pageY - 28) + "px");
                 link.style("mix-blend-mode", null);
                 d3.select(this).attr("font-weight", "bold");
                 d3.selectAll(d.incoming.map(d => d.path)).attr("stroke", colorin).raise();
@@ -133,6 +135,7 @@
               }
 
               function outed(event, d) {
+                tooltip.style("opacity", 0);
                 link.style("mix-blend-mode", "multiply");
                 d3.select(this).attr("font-weight", null);
                 d3.selectAll(d.incoming.map(d => d.path)).attr("stroke", null);
@@ -141,94 +144,19 @@
                 d3.selectAll(d.outgoing.map(([, d]) => d.text)).attr("fill", null).attr("font-weight", null);
               }
 
-            const color = d3.scaleOrdinal(d3.schemeDark2);
-
-            // Create a simulation with several forces, source: https://observablehq.com/@d3/force-directed-graph/2
-            const simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(links).id(d => d.id))
-                .force("charge", d3.forceManyBody())
-                .force("center", d3.forceCenter(svgWidth / 2, svgHeight / 2))
-                .on("tick", ticked);
-
-            // Add a line for each link, and a circle for each node.
-            const link = svg.append("g")
-                .attr("stroke", "#999")
-                .attr("stroke-opacity", 0.6)
-                .selectAll()
-                .data(links)
-                .join("line")
-                .attr("stroke-width", 1.5);
-
-            const node = svg.append("g")
-                .attr("stroke", "#fff")
-                .attr("stroke-width", 1.5)
-                .selectAll()
-                .data(nodes)
-                .join("circle")
-                .attr("r", 5)
-                .attr("fill", d => color(d.id));
-
-            node.call(d3.drag()
-                .on("start", dragstarted)
-                .on("drag", dragged)
-                .on("end", dragended));
-
-            node
-            // Tooltip
-            .on("mouseover", (event, d) => {
-                tooltip
-                    .html(`<strong>${d.id}</strong>`)
-                    .style("opacity", 1);
-            })
-            .on("mousemove", (event) => {
-                tooltip
-                    .style("left", (event.pageX + 12) + "px")
-                    .style("top",  (event.pageY - 28) + "px");
-            })
-            .on("mouseleave", () => {
-                tooltip.style("opacity", 0);
-            });
-
-          // Set the position attributes of links and nodes each time the simulation ticks, source: https://observablehq.com/@d3/force-directed-graph/2
-          function ticked() {
-            link
-                .attr("x1", d => d.source.x)
-                .attr("y1", d => d.source.y)
-                .attr("x2", d => d.target.x)
-                .attr("y2", d => d.target.y);
-
-            node
-                .attr("cx", d => d.x)
-                .attr("cy", d => d.y);
-          }
-
-          // Reheat the simulation when drag starts, and fix the subject position.
-          function dragstarted(event) {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            event.subject.fx = event.subject.x;
-            event.subject.fy = event.subject.y;
-          }
-
-          // Update the subject (dragged node) position during drag.
-          function dragged(event) {
-            event.subject.fx = event.x;
-            event.subject.fy = event.y;
-          }
-
-          // Restore the target alpha so the simulation cools after dragging ends.
-          // Unfix the subject position now that it’s no longer being dragged.
-          function dragended(event) {
-            if (!event.active) simulation.alphaTarget(0);
-            event.subject.fx = null;
-            event.subject.fy = null;
-          }
+        function bilink(root) { // source: https://observablehq.com/@d3/hierarchical-edge-bundling
+          const map = new Map(root.leaves().map(d => [d.data.name, d]));
+          for (const d of root.leaves()) d.incoming = [], d.outgoing = (neighbours[d.data.name] || []).map(m => [d, map.get(m)]).filter(([, o]) => o);
+          for (const d of root.leaves()) for (const o of d.outgoing) o[1].incoming.push(o);
+          return root;
+        }
 
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
-                .attr("x", svgWidth / 2)
-                .attr("y", 30) 
+                .attr("x", 0)
+                .attr("y", -radius + 20) 
                 .attr("text-anchor", "middle") 
-                .text("Dolphins Social Network - Node-link Diagram");
+                .text("Dolphins Social Network - Edge-Bundling");
         });
     </script>
 </body>
