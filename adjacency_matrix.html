@@ -8,12 +8,6 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         /* CSS styles for the chart */
-        .bar {
-            fill: #64c8c8;
-        }
-        .bar:hover {
-            fill: orange;
-        }
         .axis-x path,
         .axis-y path {
             fill: none;
@@ -32,9 +26,6 @@
         .title {
             font-size: 18px;
             font-weight: bold;
-        }
-        .bar-label {
-            font-size: 10px;
         }
         .tooltip {
             position: absolute;
@@ -57,7 +48,7 @@
         // Aiming for grade A
         // Set up the SVG container
         const svgWidth = 1200;
-        const svgHeight = 1000;
+        const svgHeight = 1200;
         const margin = { top: 150, right: 20, bottom: 80, left: 100 };
         
         const width = svgWidth - margin.left - margin.right;
@@ -146,8 +137,24 @@
                 .enter().append("g")
                 .attr("class", (d, i) => `${i} tile`)
 
-                .on("mouseover", d => d3.select(`#${make_id(d)}`).transition().duration(0.25).style("opacity", 1))
-                .on("mouseout", d => d3.select(`#${make_id(d)}`).transition().style("opacity", 0))
+                .on("mouseover", (event, d) => {
+                    rects.selectAll("rect")
+                        .style("opacity", r => r.xval == d.xval || r.yval == d.yval ? 1 : 0.1);
+                    tooltip
+                        .html(`<strong>${d.xval}</strong> — <strong>${d.yval}</strong>: ${d.count ? "connected" : "not connected"}`)
+                        .style("opacity", 1);
+                })
+
+                .on("mousemove", (event) => {
+                tooltip
+                    .style("left", (event.pageX + 12) + "px")
+                    .style("top",  (event.pageY - 28) + "px");
+                })
+
+                .on("mouseout", () => {
+                    rects.selectAll("rect")
+                    .style("opacity", 1);
+                })  
               
             rects.append("rect")
                   .attr("x", d => x(d.xval))
@@ -168,30 +175,6 @@
                   .style("opacity", "0")
                   .style("text-anchor", "middle")
 
-                .on("mouseover", (event, d) => {
-                tooltip
-                    .html(`<strong>${d.xval}</strong> — <strong>${d.yval}</strong>: ${d.count ? "connected" : "not connected"}`)
-                    .style("opacity", 1);
-            })
-            .on("mousemove", (event) => {
-                tooltip
-                    .style("left", (event.pageX + 12) + "px")
-                    .style("top",  (event.pageY - 28) + "px");
-            })
-            .on("mouseleave", () => {
-                tooltip.style("opacity", 0);
-            });   
-
-            // Bar labels
-            chart.selectAll(".bartext") // Source: https://stackoverflow.com/questions/18057917/adding-label-on-a-d3-bar-chart?rq=3
-               .data(data)
-               .join("text") 
-               .attr("class", "bar-label")
-               .attr("x", d => scaleX(d.Year) + 10)
-               .attr("y", d => scaleY(d.RecreationVisits) - 5)
-               .attr("text-anchor", "middle")
-               .text(d => d3.format(".2s")(d.RecreationVisits));
-
             // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
             svg.append("text")
                 .attr("x", svgWidth / 2)
@@ -199,24 +182,6 @@
                 .attr("text-anchor", "middle") 
                 .text("Dolphins Social Network – Adjacency Matrix");
 
-            // X-axis label
-            //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
-            svg.append("text")
-                .attr("class", "x label")
-                .attr("text-anchor", "middle")
-                .attr("x", svgWidth / 2)
-                .attr("y", svgHeight - 20)
-                .text("Year");
-
-            // Y-axis label
-            svg.append("text")
-                .attr("class", "y label")
-                .attr("text-anchor", "middle")
-                .attr("x", -svgHeight / 2)
-                .attr("y", 8)
-                .attr("dy", ".75em")
-                .attr("transform", "rotate(-90)")
-                .text("Recreation Visits (Log scale)");
         });
     </script>
 </body>
