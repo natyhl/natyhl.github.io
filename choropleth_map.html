@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choropleth Map</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script> <!-- Source: https://github.com/topojson/topojson -->
+    <style>
+        /* CSS styles for the chart */
+        .bar {
+            fill: #64c8c8;
+        }
+        .bar:hover {
+            fill: orange;
+        }
+        .axis-x path,
+        .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        .axis-x .tick line,
+        .axis-y .tick line {
+            stroke: #ccc;
+        }
+
+        .axis text {
+            font-size: 12px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .bar-label {
+            font-size: 10px;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="chart-container"></div>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Aiming for grade A
+        // Set up the SVG container
+        const svgWidth = 1200;
+        const svgHeight = 600;
+        const margin = { top: 60, right: 200, bottom: 80, left: 100 };
+        
+        const width = svgWidth - margin.left - margin.right;
+        const height = svgHeight - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .attr("viewBox", [0, 0, 975, 610]) // Source: https://observablehq.com/@d3/choropleth/2
+            .attr("style", "max-width: 100%; height: auto;");
+
+        const tooltip = d3.select("#tooltip");
+
+        d3.csv("Unemployment2023.csv").then(function(data) {
+
+            // Convert string values to numbers
+            data.forEach(function(d) {
+                d.id = String(d.FIPS_Code).padStart(5, "0");
+                d.rate = +d.Value;
+            });
+
+            d3.json("counties-albers-10m.json").then(function(us) { //https://observablehq.com/@d3/choropleth/2
+
+            // Source: https://observablehq.com/@d3/choropleth/2
+            const color = d3.scaleQuantize([1, 10], d3.schemeBlues[9]);
+            const path = d3.geoPath();
+            const format = d => `${d}%`;
+
+            // The counties feature collection is all U.S. counties, each with a
+            // five-digit FIPS identifier. The statemap lets us lookup the name of 
+            // the state that contains a given county; a state’s two-digit identifier
+            // corresponds to the first two digits of its counties’ identifiers.
+            const valuemap = new Map(data
+                .filter(d => d.Attribute.trim() == "Unemployment_rate_2023")
+                .map(d => [d.id, d.rate]));
+            const counties = topojson.feature(us, us.objects.counties);
+            const states = topojson.feature(us, us.objects.states);
+            const statemap = new Map(states.features.map(d => [d.id, d]));
+
+            // Color scale, source: https://d3-legend.susielu.com/
+            const scaleColor = d3.scaleSequential(d3.interpolateBlues)
+                .domain([1,10]);
+
+            // Source: https://observablehq.com/@d3/choropleth/2
+            svg.append("g")
+                .selectAll("path")
+                .data(topojson.feature(us, us.objects.counties).features)
+                .join("path")
+                .attr("fill", d => color(valuemap.get(d.id)))
+                .attr("d", path)
+                .on("mouseover", (event, d) => {
+                tooltip
+                    .html(`${d.properties.name}: ${valuemap.get(d.id)}%`)
+                    .style("opacity", 1);
+                })
+                .on("mousemove", (event) => {
+                    tooltip
+                        .style("left", (event.pageX + 12) + "px")
+                        .style("top",  (event.pageY - 28) + "px");
+                })
+                .on("mouseleave", () => {
+                    tooltip.style("opacity", 0);
+                })
+                    .append("title")
+                    .text(d => `${d.properties.name}, ${statemap.get(d.id.slice(0, 2)).properties.name}\n${valuemap.get(d.id)}%`);
+
+              svg.append("path")
+                  .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+                  .attr("fill", "none")
+                  .attr("stroke", "white")
+                  .attr("stroke-linejoin", "round")
+                  .attr("d", path);
+
+            // Add title, http://www.d3noob.org/2013/01/adding-title-to-your-d3js-graph.html
+            svg.append("text")
+                .attr("x", svgWidth / 2)
+                .attr("y", 30) 
+                .attr("text-anchor", "middle") 
+                .text("U.S. County Unemployment Rate 2023 - Choropleth Map");
+
+            // // X-axis label
+            // //Source: https://stackoverflow.com/questions/11189284/d3-axis-labeling
+            // svg.append("text")
+            //     .attr("class", "x label")
+            //     .attr("text-anchor", "middle")
+            //     .attr("x", svgWidth / 2)
+            //     .attr("y", svgHeight - 20)
+            //     .text("Daily Phone Hours");
+
+            // Legend: https://d3-legend.susielu.com/
+            // svg.append("g")
+            //   .attr("class", "legendSize")
+            //   .attr("transform", `translate(${width + margin.left + 20}, 80)`);
+
+            // var legendSize = d3.legendSize()
+            //   .scale(scaleSize)
+            //   .shape('circle')
+            //   .shapePadding(15)
+            //   .labelOffset(20)
+            //   .title('Productivity Score');
+
+            // svg.select(".legendSize")
+            //   .call(legendSize);
+
+            svg.append("g")
+              .attr("class", "legendColor")
+              .attr("transform", `translate(${width + margin.left + 20}, 320)`);
+
+            var legend = d3.legendColor()
+              .scale(scaleColor)
+              .title("Unemployment Rate (%)");
+
+            svg.select(".legendColor")
+              .call(legend);
+            });
+
+        });
+    </script>
+</body>
+</html>
