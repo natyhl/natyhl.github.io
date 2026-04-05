@@ -64,7 +64,7 @@ const circles = g.selectAll('circle')
     d3.select(this).attr('fill-opacity', 0.7);
     tooltip.style.display = 'block';
     tooltip.querySelector('strong').textContent = d.State;
-    tooltip.querySelector('span').textContent = 'Housing Cost: ' + d.housingCost;
+    tooltip.querySelector('span').textContent = 'Housing Cost Index: ' + d.housingCost;
   })
   .on('mousemove', function(event) {
     tooltip.style.left = (event.pageX + 12) + 'px';
