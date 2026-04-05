@@ -49,16 +49,17 @@ d3.csv("expensive-states.csv").then(function(data) {
     d.lat        = +d.latitude;
     d.lng        = +d.longitude;
     d.housingCost = +d.housingCost;
+    d.costRank    = +d.costRank;
   });
 
-  const r = d3.scaleSqrt().domain([0, d3.max(data, d => d.housingCost)]).range([0, 30]);
+  const r = d3.scaleSqrt().domain([0, d3.max(data, d => d.housingCost)]).range([0, 25]);
 
 const circles = g.selectAll('circle')
   .data(data).join('circle')
   .attr('r', d => r(d.housingCost))
-  .attr('fill', 'steelblue')
+  .attr('fill',   d => d.costRank <= 10 ? 'orange' : 'steelblue') // 10 highest
   .attr('fill-opacity', 0.4)
-  .attr('stroke', 'steelblue')
+  .attr('stroke', d => d.costRank <= 10 ? 'orange' : 'steelblue') // 10 highest
   .on('mouseover', function(event, d) {
     d3.select(this).attr('fill-opacity', 0.7);
     tooltip.style.display = 'block';
